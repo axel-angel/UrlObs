@@ -70,7 +70,7 @@ foreach (@$urls) {
     }
 
     $info->{hash} = $nhash;
-    $info->{section} = $render;
+    $info->{content} = $render;
     $info->{last} = time();
 }
 
