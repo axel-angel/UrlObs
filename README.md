@@ -1,14 +1,14 @@
 UrlObs
 ======
 
-Url Observer (Perl+YAML, detect change)
+Url Observer: fetch the URLs in the configuration and print the changes. Written in Perl, use YAML config format. Dead simple.
 
-Require:
-* LWP::Simple;
-* YAML::Syck;
-* Digest::MD5 qw{md5\_hex};
-* IPC::Open3;
-* Text::Diff;
+Require (cpan install):
+* LWP::Simple
+* YAML::Syck
+* Digest::MD5
+* IPC::Open3
+* Text::Diff
 
 Use:
 ```sh
