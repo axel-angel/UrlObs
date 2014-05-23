@@ -9,6 +9,7 @@ use IPC::Open3;
 use Text::Diff;
 
 my $file = $ARGV[0] // "url.yaml";
+die("$file: $!") unless -e $file;
 my $urls = LoadFile($file);
 
 sub html_render {
