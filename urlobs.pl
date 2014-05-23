@@ -2,6 +2,8 @@
 use strict;
 use warnings;
 
+use constant VERBOSE => 0;
+
 use LWP::Simple;
 use YAML::Syck;
 use Digest::MD5 qw{md5_hex};
@@ -37,6 +39,7 @@ foreach (@$urls) {
     my $ldate = $info->{last} // 0;
 
     next if ($ldate + $freq > time()); # Skip too fresh
+    print "fetching $url\n" if VERBOSE;
     my $page = get($url) or die("fetch failed: $!");
 
     my $section;
@@ -50,13 +53,19 @@ foreach (@$urls) {
         }
         $section .= "$_\n";
     }
+    print "content $section\n" if VERBOSE;
 
     my $render = html_render($section);
+    print "rendered $render\n" if VERBOSE;
     my $nhash = md5_hex($render);
+    print "hashed $nhash\n" if VERBOSE;
 
     if (not $hash eq $nhash) {
         my $diffs = diff(\$old, \$render);
         print "Changes for $title:\n$diffs\n";
+    }
+    else {
+        print "no change $nhash\n" if VERBOSE;
     }
 
     $info->{hash} = $nhash;
