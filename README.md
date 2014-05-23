@@ -16,9 +16,10 @@ perl urlobs.pl example.yaml
 ```
 
 YAML format is a list of entry where:
-* title: used for humans
 * url: is the url
-* interval: is the minimum fetching interval (seconds)
-* start: ignore everything before this Perl-regex
-* stop: ignore everything after this Perl-regex
+* title: used for humans [optional]
+* interval: is the minimum fetching interval (seconds) [optional]
+* start: ignore everything before this Perl-regex [optional]
+* stop: ignore everything after this Perl-regex [optional]
+
 The file is modified by the program as a database
