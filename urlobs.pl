@@ -6,52 +6,61 @@ use LWP::Simple;
 use YAML::Syck;
 use Digest::MD5 qw{md5_hex};
 use IPC::Open3;
+use Text::Diff;
 
-my $file = 'url.yaml';
+my $file = $ARGV[0] // "url.yaml";
 my $urls = LoadFile($file);
+
+sub html_render {
+    my ($html) = @_;
+    my $cmd = 'elinks -force-html -no-references -no-numbering -dump';
+    my $pid = open3(my $cin, my $cout, my $cerr, $cmd)
+        or die("open3 failed: rendering failed: $!");
+    print $cin $html;
+    close($cin);
+    waitpid($pid, 0);
+
+    local $/;
+    return <$cout>;
+}
 
 foreach (@$urls) {
     my $info = $_;
     my $url = $info->{url};
+    my $title = $info->{title} // $url;
     my $start = $info->{start};
     my $stop = $info->{stop};
     my $hash = $info->{hash} // "";
-    my $old = $info->{section} // "";
-    print "fetch $url\n";
+    my $old = $info->{content} // "";
+    my $freq = $info->{interval} // 0;
+    my $ldate = $info->{last} // 0;
 
-    my $page = get($url);
+    next if ($ldate + $freq > time()); # Skip too fresh
+    my $page = get($url) or die("fetch failed: $!");
+
     my $section;
-
     foreach (split /\n/, $page) {
         if (defined $start) {
             undef $start if m{$start};
             next;
         }
-        if (defined $stop and m{$stop}) {
+        elsif (defined $stop and m{$stop}) {
             last;
         }
         $section .= "$_\n";
     }
 
-    unless ($hash) {
-        print "\tpage was never scraped\n";
-    }
+    my $render = html_render($section);
+    my $nhash = md5_hex($render);
 
-    my $nhash = md5_hex($section);
     if (not $hash eq $nhash) {
-        local $/;
-        my $cmd = 'elinks -force-html -no-references -no-numbering -dump';
-        my $pid = open3(my $cin, my $cout, my $cerr, $cmd)
-            or die("open3 failed: rendering failed: $!");
-        print $cin $section;
-        close($cin);
-        waitpid($pid, 0);
-        my $render = <$cout>;
-
-        $info->{hash} = md5_hex($render);
-        $info->{section} = $render;
-        print "Page changed:\n$render\n";
+        my $diffs = diff(\$old, \$render);
+        print "Changes for $title:\n$diffs\n";
     }
+
+    $info->{hash} = $nhash;
+    $info->{section} = $render;
+    $info->{last} = time();
 }
 
 DumpFile($file, $urls);
