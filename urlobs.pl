@@ -8,32 +8,21 @@ use constant VERBOSE => 0;
 use LWP::Simple;
 use YAML::Syck;
 use Digest::MD5 qw{md5_hex};
-use IPC::Open3;
 use Text::Diff;
+use HTML::TreeBuilder::XPath;
+use XML::XPath;
+use XML::XPath::XMLParser;
 
 my $file = $ARGV[0] // "url.yaml";
 die("$file: $!") unless -e $file;
 my $urls = LoadFile($file);
 
-sub html_render {
-    my ($html) = @_;
-    my $cmd = 'elinks -force-html -no-references -no-numbering -dump';
-    my $pid = open3(my $cin, my $cout, my $cerr, $cmd)
-        or die("open3 failed: rendering failed: $!");
-    print $cin $html;
-    close($cin);
-    waitpid($pid, 0);
-
-    local $/;
-    return <$cout>;
-}
-
 foreach (@$urls) {
     my $info = $_;
     my $url = $info->{url};
+    my $xpath = $info->{xpath};
+    my $type = $info->{type} // "html";
     my $title = $info->{title} // $url;
-    my $start = $info->{start};
-    my $stop = $info->{stop};
     my $hash = $info->{hash} // "";
     my $old = $info->{content} // "";
     my $freq = $info->{interval} // 0;
@@ -41,23 +30,33 @@ foreach (@$urls) {
 
     next if ($ldate + $freq > time()); # Skip too fresh
     print "fetching $url\n" if VERBOSE;
-    my $page = get($url) or die("fetch failed: $!");
+    my $page = get($url) or (warn("fetch failed: $url $!") and next);
 
-    my $section;
-    foreach (split /\n/, $page) {
-        if (defined $start) {
-            undef $start if m{$start};
-            next;
-        }
-        elsif (defined $stop and m{$stop}) {
-            last;
-        }
-        $section .= "$_\n";
+    my $section, my $render;
+    if ($type eq "html") {
+        my $tree = HTML::TreeBuilder::XPath->new;
+        $tree->parse($page);
+        my @xs = $tree->findnodes($xpath);
+        $section = join("", map{ $_->as_HTML } @xs);
+        $render = join("\n", map{ $_->as_text } @xs);
     }
-    print "content $section\n" if VERBOSE;
+    elsif ($type eq "xml") {
+        my $tree = XML::XPath->new($page);
+        my @xs = $tree->findnodes($xpath);
+        $section = join("", map{ $_->toString } @xs);
+        $render = join("\n", map{ $_->string_value } @xs);
+    }
+    else {
+        warn("unknown type: $type"); next;
+    }
 
-    my $render = html_render($section);
-    print "rendered $render\n" if VERBOSE;
+    $render =~ s/[ \t\r]\+/ /g;
+    $render =~ s/(^[ \t\r]+|[ \t\r]+$)//g;
+
+    print "old: {$old}\n" if VERBOSE;
+    print "content: {$section}\n" if VERBOSE;
+    print "rendered: {$render}\n" if VERBOSE;
+
     my $nhash = md5_hex($render);
     print "hashed $nhash\n" if VERBOSE;
 

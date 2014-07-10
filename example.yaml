@@ -1,7 +1,13 @@
 --- 
 - 
-  url: https://github.com/axel-angel
   interval: 3600
-  start: <h2>Contribution activity</h2>
-  stop: <\/div><!-- \/.contributions-tab -->
+  title: slashdot
+  type: xml
+  url: http://rss.slashdot.org/Slashdot/slashdot
+  xpath: /rss/channel/item/title
+- 
+  interval: 3600
   title: github
+  type: html
+  url: https://github.com/axel-angel?tab=repositories
+  xpath: /html/body//ul[contains(@class,"repolist")]//h3
