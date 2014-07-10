@@ -12,6 +12,7 @@ use Text::Diff;
 use HTML::TreeBuilder::XPath;
 use XML::XPath;
 use XML::XPath::XMLParser;
+use Encode qw(encode);
 
 my $file = $ARGV[0] // "url.yaml";
 die("$file: $!") unless -e $file;
@@ -57,7 +58,7 @@ foreach (@$urls) {
     print "content: {$section}\n" if VERBOSE;
     print "rendered: {$render}\n" if VERBOSE;
 
-    my $nhash = md5_hex($render);
+    my $nhash = md5_hex(encode('UTF-8', $render));
     print "hashed $nhash\n" if VERBOSE;
 
     if (not $hash eq $nhash) {
