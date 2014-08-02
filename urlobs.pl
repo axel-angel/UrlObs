@@ -28,28 +28,37 @@ foreach (@$urls) {
     my $old = $info->{content} // "";
     my $freq = $info->{interval} // 0;
     my $ldate = $info->{last} // 0;
+    my $noorder = $info->{no_order} // 0;
 
     next if ($ldate + $freq > time()); # Skip too fresh
     print "fetching $url\n" if VERBOSE;
     my $page = get($url) or (warn("fetch failed: $url $!") and next);
 
-    my $section, my $render;
+    my @section, my @render;
     if ($type eq "html") {
         my $tree = HTML::TreeBuilder::XPath->new;
         $tree->parse($page);
         my @xs = $tree->findnodes($xpath);
-        $section = join("", map{ $_->as_HTML } @xs);
-        $render = join("\n", map{ $_->as_text } @xs);
+        @section = map{ $_->as_HTML } @xs;
+        @render = map{ $_->as_text } @xs;
     }
     elsif ($type eq "xml") {
         my $tree = XML::XPath->new($page);
         my @xs = $tree->findnodes($xpath);
-        $section = join("", map{ $_->toString } @xs);
-        $render = join("\n", map{ $_->string_value } @xs);
+        @section = map{ $_->toString } @xs;
+        @render = map{ $_->string_value } @xs;
     }
     else {
         warn("unknown type: $type"); next;
     }
+
+    if ($noorder) {
+        @section = sort @section;
+        @render  = sort @render;
+    }
+
+    my $section = join("", @section);
+    my $render  = join("\n", @render);
 
     $render =~ s/[ \t\r]\+/ /g;
     $render =~ s/(^[ \t\r]+|[ \t\r]+$)//g;
