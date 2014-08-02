@@ -58,7 +58,7 @@ foreach (@$urls) {
     }
 
     my $section = join("", @section);
-    my $render  = join("\n", @render);
+    my $render = encode('UTF-8', join("\n", @render));
 
     $render =~ s/[ \t\r]\+/ /g;
     $render =~ s/(^[ \t\r]+|[ \t\r]+$)//g;
@@ -67,7 +67,7 @@ foreach (@$urls) {
     print "content: {$section}\n" if VERBOSE;
     print "rendered: {$render}\n" if VERBOSE;
 
-    my $nhash = md5_hex(encode('UTF-8', $render));
+    my $nhash = md5_hex($render);
     print "hashed $nhash\n" if VERBOSE;
 
     if (not $hash eq $nhash) {
