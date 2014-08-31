@@ -55,7 +55,6 @@ foreach (@$urls) {
     my $freq = $info->{interval} // 0;
     my $ldate = $info->{last} // 0;
     my $keepold = $info->{keep_old} // 0;
-    my $noorder = $info->{no_order} // $keepold;
 
     next if ($ldate + $freq > time()); # Skip too fresh
     print "fetching $url\n" if VERBOSE;
@@ -77,10 +76,6 @@ foreach (@$urls) {
         warn("unknown type: $type"); next;
     }
 
-    if ($noorder) {
-        @render  = sort @render;
-    }
-
     if ($keepold) {
         foreach my $el (@old) {
             push(@render, $el) unless first{$_ eq $el} @render;
@@ -88,6 +83,7 @@ foreach (@$urls) {
     }
 
     @render = map{ process_content($_) } @render;
+    @render = sort @render;
 
     print "old: {@old}\n" if VERBOSE;
     print "rendered: {@render}\n" if VERBOSE;
