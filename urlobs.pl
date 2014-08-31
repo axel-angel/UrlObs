@@ -13,13 +13,12 @@ use Text::Diff;
 use HTML::TreeBuilder::XPath;
 use XML::XPath;
 use XML::XPath::XMLParser;
-use Encode qw(encode);
+use Encode qw(encode decode);
 use List::Util qw{first};
 
 
 sub process_content {
     my ($text) = @_;
-    $text = encode('UTF-8', $text);
     $text =~ s/[ \t\r]\+/ /g;
     return $text;
 }
@@ -27,7 +26,11 @@ sub process_content {
 
 my $file = $ARGV[0] // "url.yaml";
 die("$file: $!") unless -e $file;
-my $urls = LoadFile($file);
+
+my $fh;
+open($fh, '<:encoding(UTF-8)', $file);
+my $urls = LoadFile($fh);
+close($fh);
 
 foreach (@$urls) {
     my $info = $_;
@@ -36,7 +39,7 @@ foreach (@$urls) {
     my $type = $info->{type} // "html";
     my $title = $info->{title} // $url;
     my $hash = $info->{hash} // "";
-    my @old = @{$info->{content} // []};
+    my @old = map{ decode('UTF-8', $_) } @{$info->{content} // []};
     my $freq = $info->{interval} // 0;
     my $ldate = $info->{last} // 0;
     my $keepold = $info->{keep_old} // 0;
@@ -77,7 +80,7 @@ foreach (@$urls) {
     print "old: {@old}\n" if VERBOSE;
     print "rendered: {@render}\n" if VERBOSE;
 
-    my $nhash = md5_hex(join('', @render));
+    my $nhash = md5_hex(encode('UTF-8', join('', @render)));
     print "hashed $nhash\n" if VERBOSE;
 
     if (not $hash eq $nhash) {
@@ -96,4 +99,6 @@ foreach (@$urls) {
     $info->{last} = time();
 }
 
-DumpFile($file, $urls);
+open($fh, '>:encoding(UTF-8)', $file);
+DumpFile($fh, $urls);
+close($fh);
