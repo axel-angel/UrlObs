@@ -23,5 +23,7 @@ YAML format is a list of entry where:
 * title: used for humans [optional]
 * interval: is the minimum fetching interval (seconds) [optional]
 * type: whether it is html or xml [missing means html]
+* no_order: whether we do a sorting (effectively ignoring the output ordering)
+* keep_old: whether we should ignore deletions by keeping old entries (useful for youtube RSS, they blink). This option forces no_order by default.
 
 The file is modified by the program as a database. Look at example.yml for an example.
