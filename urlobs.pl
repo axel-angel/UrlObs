@@ -14,6 +14,7 @@ use HTML::TreeBuilder::XPath;
 use XML::XPath;
 use XML::XPath::XMLParser;
 use Encode qw(encode);
+use List::Util qw{first};
 
 
 sub process_content {
@@ -53,7 +54,8 @@ foreach (@$urls) {
     my @old = @{$info->{content} // []};
     my $freq = $info->{interval} // 0;
     my $ldate = $info->{last} // 0;
-    my $noorder = $info->{no_order} // 0;
+    my $keepold = $info->{keep_old} // 0;
+    my $noorder = $info->{no_order} // $keepold;
 
     next if ($ldate + $freq > time()); # Skip too fresh
     print "fetching $url\n" if VERBOSE;
@@ -77,6 +79,12 @@ foreach (@$urls) {
 
     if ($noorder) {
         @render  = sort @render;
+    }
+
+    if ($keepold) {
+        foreach my $el (@old) {
+            push(@render, $el) unless first{$_ eq $el} @render;
+        }
     }
 
     @render = map{ process_content($_) } @render;
