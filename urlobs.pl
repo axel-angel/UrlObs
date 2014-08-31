@@ -9,7 +9,7 @@ use constant VERBOSE => 0;
 use LWP::Simple;
 use YAML::Syck;
 use Digest::MD5 qw{md5_hex};
-use Algorithm::Diff qw{diff};
+use Text::Diff;
 use HTML::TreeBuilder::XPath;
 use XML::XPath;
 use XML::XPath::XMLParser;
@@ -22,21 +22,6 @@ sub process_content {
     $text = encode('UTF-8', $text);
     $text =~ s/[ \t\r]\+/ /g;
     return $text;
-}
-
-
-sub mydiff {
-    my ($a, $b) = @_;
-
-    my @rep;
-    my @diffs = diff($a, $b);
-    for my $l (@diffs) {
-        for my $m (@$l) {
-            push(@rep, $m->[0] ." ". $m->[2]);
-        }
-    }
-
-    return join("\n", @rep);
 }
 
 
@@ -55,6 +40,7 @@ foreach (@$urls) {
     my $freq = $info->{interval} // 0;
     my $ldate = $info->{last} // 0;
     my $keepold = $info->{keep_old} // 0;
+    my $noorder = $info->{no_order} // $keepold;
 
     next if ($ldate + $freq > time()); # Skip too fresh
     print "fetching $url\n" if VERBOSE;
@@ -76,6 +62,10 @@ foreach (@$urls) {
         warn("unknown type: $type"); next;
     }
 
+    if ($noorder) {
+        @render  = sort @render;
+    }
+
     if ($keepold) {
         foreach my $el (@old) {
             push(@render, $el) unless first{$_ eq $el} @render;
@@ -83,7 +73,6 @@ foreach (@$urls) {
     }
 
     @render = map{ process_content($_) } @render;
-    @render = sort @render;
 
     print "old: {@old}\n" if VERBOSE;
     print "rendered: {@render}\n" if VERBOSE;
@@ -92,8 +81,11 @@ foreach (@$urls) {
     print "hashed $nhash\n" if VERBOSE;
 
     if (not $hash eq $nhash) {
-        my @diffs = mydiff(\@old, \@render);
-        print "Changes for $title:\n". join("\n", @diffs) ."\n";
+        my @a = map {"$_\n"} @old;
+        my @b = map {"$_\n"} @render;
+        diff(\@a, \@b, {OUTPUT => \my @diffs});
+        print "Changes for $title:\n";
+        print for @diffs;
     }
     else {
         print "no change $nhash\n" if VERBOSE;
