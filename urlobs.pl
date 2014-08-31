@@ -26,11 +26,7 @@ sub process_content {
 
 my $file = $ARGV[0] // "url.yaml";
 die("$file: $!") unless -e $file;
-
-my $fh;
-open($fh, '<:encoding(UTF-8)', $file);
-my $urls = LoadFile($fh);
-close($fh);
+my $urls = LoadFile($file);
 
 foreach (@$urls) {
     my $info = $_;
@@ -99,6 +95,4 @@ foreach (@$urls) {
     $info->{last} = time();
 }
 
-open($fh, '>:encoding(UTF-8)', $file);
-DumpFile($fh, $urls);
-close($fh);
+DumpFile($file, $urls);
