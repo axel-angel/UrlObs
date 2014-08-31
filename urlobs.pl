@@ -59,18 +59,16 @@ foreach (@$urls) {
     print "fetching $url\n" if VERBOSE;
     my $page = get($url) or (warn("fetch failed: $url $!") and next);
 
-    my @section, my @render;
+    my @render;
     if ($type eq "html") {
         my $tree = HTML::TreeBuilder::XPath->new;
         $tree->parse($page);
         my @xs = $tree->findnodes($xpath);
-        @section = map{ $_->as_HTML } @xs;
         @render = map{ $_->as_text } @xs;
     }
     elsif ($type eq "xml") {
         my $tree = XML::XPath->new($page);
         my @xs = $tree->findnodes($xpath);
-        @section = map{ $_->toString } @xs;
         @render = map{ $_->string_value } @xs;
     }
     else {
@@ -78,15 +76,12 @@ foreach (@$urls) {
     }
 
     if ($noorder) {
-        @section = sort @section;
         @render  = sort @render;
     }
 
-    my $section = join("", @section);
     @render = map{ process_content($_) } @render;
 
     print "old: {@old}\n" if VERBOSE;
-    print "content: {$section}\n" if VERBOSE;
     print "rendered: {@render}\n" if VERBOSE;
 
     my $nhash = md5_hex(join('', @render));
