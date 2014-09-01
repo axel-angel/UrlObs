@@ -61,14 +61,14 @@ foreach (@$urls) {
         warn("unknown type: $type"); next;
     }
 
-    if ($noorder) {
-        @render  = sort @render;
-    }
-
     if ($keepold) {
         foreach my $el (@old) {
             push(@render, $el) unless first{$_ eq $el} @render;
         }
+    }
+
+    if ($noorder) {
+        @render  = sort @render;
     }
 
     @render = map{ process_content($_) } @render;
