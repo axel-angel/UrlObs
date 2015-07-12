@@ -6,7 +6,7 @@ use utf8;
 use constant VERBOSE => 0;
 
 
-use LWP::Simple;
+use LWP::UserAgent;
 use YAML::Syck;
 use Digest::MD5 qw{md5_hex};
 use Text::Diff;
@@ -40,10 +40,18 @@ foreach (@$urls) {
     my $ldate = $info->{last} // 0;
     my $keepold = $info->{keep_old} // 0;
     my $noorder = $info->{no_order} // $keepold;
+    my $useragent = $info->{user_agent};
 
     next if ($ldate + $freq > time()); # Skip too fresh
     print "fetching $url\n" if VERBOSE;
-    my $page = get($url) or (warn("fetch failed: $url $!") and next);
+    my $ua = LWP::UserAgent->new();
+    $ua->agent($useragent) if defined $useragent;
+    my $res = $ua->get($url);
+    unless ($res->is_success) {
+        warn("fetch failed: $url $!");
+        next;
+    }
+    my $page = $res->decoded_content;
 
     my @render;
     if ($type eq "html") {
