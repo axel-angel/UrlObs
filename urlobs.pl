@@ -91,8 +91,9 @@ foreach (@$urls) {
         my @a = map {"$_\n"} @old;
         my @b = map {"$_\n"} @render;
         diff(\@a, \@b, {OUTPUT => \my @diffs});
-        print "Changes for $title:\n";
+        print ">>> Changes for $title:\n";
         print for @diffs;
+        print "\n";
     }
     else {
         print "no change $nhash\n" if VERBOSE;
