@@ -11,3 +11,9 @@
   type: html
   url: https://github.com/axel-angel?tab=repositories
   xpath: /html/body//ul[contains(@class,"repolist")]//h3
+-
+  interval: 3600
+  title: Joueur Du Grenier (Youtube)
+  type: xml
+  url: https://www.youtube.com/feeds/videos.xml?user=joueurdugrenier
+  xpath: /feed/entry/title
