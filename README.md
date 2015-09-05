@@ -26,5 +26,6 @@ YAML format is a list of entry where:
 * no_order: whether we do a sorting (effectively ignoring the output ordering)
 * keep_old: whether we should ignore deletions by keeping old entries (useful for youtube RSS, they blink). This option forces no_order by default.
 * user_agent: Specify the browser signature, useful to circumvent certain useless site protections [optional].
+* cookie: raw data sent directly as the Cookie header [optional]
 
 The file is modified by the program as a database. Look at example.yml for an example.

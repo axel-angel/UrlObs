@@ -41,12 +41,16 @@ foreach (@$urls) {
     my $keepold = $info->{keep_old} // 0;
     my $noorder = $info->{no_order} // $keepold;
     my $useragent = $info->{user_agent};
+    my $cookie = $info->{cookie};
+
+    my @headers = ();
+    push @headers, ("Cookie" => $cookie) if $cookie;
 
     next if ($ldate + $freq > time()); # Skip too fresh
     print "fetching $url\n" if VERBOSE;
     my $ua = LWP::UserAgent->new();
     $ua->agent($useragent) if defined $useragent;
-    my $res = $ua->get($url);
+    my $res = $ua->get($url, @headers);
     unless ($res->is_success) {
         warn("fetch failed: $url $!");
         next;
