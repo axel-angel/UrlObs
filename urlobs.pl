@@ -41,6 +41,7 @@ foreach (@$urls) {
     my $ldate = $info->{last} // 0;
     my $keepold = $info->{keep_old} // 0;
     my $noorder = $info->{no_order} // $keepold;
+    my $onlydiffs = $info->{onlydiffs} // 1;
     my $failures = $info->{failures} // 0;
     my $useragent = $info->{user_agent};
     my $cookie = $info->{cookie};
@@ -57,8 +58,8 @@ foreach (@$urls) {
     my $res = $ua->get($url, @headers);
     unless ($res->is_success) {
         unless ($info->{failures}) {
-            warn(">!! Fetch failed for $title:");
-            warn($res->status_line ."\n\n");
+            warn("〉✗ Fetch failed for $title:");
+            warn("  HTTP: ". $res->status_line ."\n\n");
         }
         ++$info->{failures};
         next;
@@ -78,7 +79,7 @@ foreach (@$urls) {
         @render = map{ $_->string_value } @xs;
     }
     else {
-        warn(">!! Unknown type for $title\n"); next;
+        warn("〉✗ Unknown type for $title\n"); next;
     }
 
     if ($keepold) {
@@ -100,11 +101,24 @@ foreach (@$urls) {
     print "hashed $nhash\n" if VERBOSE;
 
     if (not $hash eq $nhash) {
-        my @a = map {"$_\n"} @old;
-        my @b = map {"$_\n"} @render;
-        diff(\@a, \@b, {OUTPUT => \my @diffs});
-        print ">>> Changes for $title:\n";
-        print for @diffs;
+        my @diffs = ();
+        if ($onlydiffs) {
+            my %a = map { $_ => 1 } @old;
+            my %b = map { $_ => 1 } @render;
+            push(@diffs, "++ New:");
+            foreach (keys %b) {
+                push(@diffs, "  ". $_) unless defined $a{$_};
+            }
+            push(@diffs, "-- Off:");
+            foreach (keys %a) {
+                push(@diffs, "  ". $_) unless defined $b{$_};
+            }
+        }
+        else {
+            diff(\@old, \@render, {OUTPUT => \@diffs});
+        }
+        print "〉 Changes for $title:\n";
+        print "$_\n" foreach @diffs;
         print "\n";
     }
     else {
