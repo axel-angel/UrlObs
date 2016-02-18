@@ -48,6 +48,7 @@ foreach (@$urls) {
     my @headers = ();
     push @headers, ("Cookie" => $cookie) if $cookie;
 
+    $info->{last} = time();
     next if ($ldate + $freq > time()); # Skip too fresh
 
     print "fetching $url\n" if VERBOSE;
