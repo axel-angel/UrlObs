@@ -4,7 +4,8 @@ use warnings;
 
 use utf8;
 use constant VERBOSE => 0;
-
+binmode STDOUT, ":encoding(UTF-8)";
+binmode STDERR, ":encoding(UTF-8)";
 
 use LWP::UserAgent;
 use YAML::Syck;
