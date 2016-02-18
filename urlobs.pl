@@ -40,6 +40,7 @@ foreach (@$urls) {
     my $ldate = $info->{last} // 0;
     my $keepold = $info->{keep_old} // 0;
     my $noorder = $info->{no_order} // $keepold;
+    my $failures = $info->{failures} // 0;
     my $useragent = $info->{user_agent};
     my $cookie = $info->{cookie};
 
@@ -47,12 +48,17 @@ foreach (@$urls) {
     push @headers, ("Cookie" => $cookie) if $cookie;
 
     next if ($ldate + $freq > time()); # Skip too fresh
+
     print "fetching $url\n" if VERBOSE;
     my $ua = LWP::UserAgent->new();
     $ua->agent($useragent) if defined $useragent;
     my $res = $ua->get($url, @headers);
     unless ($res->is_success) {
-        warn("fetch failed: $url $!");
+        unless ($info->{failures}) {
+            warn(">!! Fetch failed for $title:");
+            warn($res->status_line ."\n\n");
+        }
+        ++$info->{failures};
         next;
     }
     my $page = $res->decoded_content;
@@ -70,7 +76,7 @@ foreach (@$urls) {
         @render = map{ $_->string_value } @xs;
     }
     else {
-        warn("unknown type: $type"); next;
+        warn(">!! Unknown type for $title\n"); next;
     }
 
     if ($keepold) {
@@ -105,7 +111,7 @@ foreach (@$urls) {
 
     $info->{hash} = $nhash;
     $info->{content} = \@render;
-    $info->{last} = time();
+    $info->{failures} = 0;
 }
 
 DumpFile($file, $urls);
