@@ -51,7 +51,7 @@ foreach (@$urls) {
     push @headers, ("Cookie" => $cookie) if $cookie;
 
     $info->{last} = time();
-    $freq = $freq * 2 ** min($min_alert_failures, $info->{failures});
+    $freq = $freq * 2 ** min($min_alert_failures, $failures);
     next if ($ldate + $freq > time()); # Skip too fresh
 
     print "fetching $url\n" if VERBOSE;
