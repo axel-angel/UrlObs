@@ -15,7 +15,7 @@ use HTML::TreeBuilder::XPath;
 use XML::XPath;
 use XML::XPath::XMLParser;
 use Encode qw(encode decode);
-use List::Util qw{first};
+use List::Util qw{first min};
 
 
 sub process_content {
@@ -45,11 +45,13 @@ foreach (@$urls) {
     my $failures = $info->{failures} // 0;
     my $useragent = $info->{user_agent};
     my $cookie = $info->{cookie};
+    my $min_alert_failures = $info->{min_failure_alert} // 5;
 
     my @headers = ();
     push @headers, ("Cookie" => $cookie) if $cookie;
 
     $info->{last} = time();
+    $freq = $freq * 2 ** min($min_alert_failures, $info->{failures});
     next if ($ldate + $freq > time()); # Skip too fresh
 
     print "fetching $url\n" if VERBOSE;
@@ -57,8 +59,8 @@ foreach (@$urls) {
     $ua->agent($useragent) if defined $useragent;
     my $res = $ua->get($url, @headers);
     unless ($res->is_success) {
-        unless ($info->{failures}) {
-            warn("〉✗ Fetch failed for $title:");
+        if ($info->{failures} >= $min_alert_failures) {
+            warn("〉✗ Fetch failed for $title (freq: $freq):");
             warn("  HTTP: ". $res->status_line ."\n\n");
         }
         ++$info->{failures};
