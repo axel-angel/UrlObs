@@ -50,7 +50,6 @@ foreach (@$urls) {
     my @headers = ();
     push @headers, ("Cookie" => $cookie) if $cookie;
 
-    $info->{last} = time();
     $freq = $freq * 2 ** min($min_alert_failures, $failures);
     next if ($ldate + $freq > time()); # Skip too fresh
 
@@ -58,6 +57,7 @@ foreach (@$urls) {
     my $ua = LWP::UserAgent->new();
     $ua->agent($useragent) if defined $useragent;
     my $res = $ua->get($url, @headers);
+    $info->{last} = time();
     unless ($res->is_success) {
         if ($info->{failures} >= $min_alert_failures) {
             warn("〉✗ Fetch failed for $title (freq: $freq):");
