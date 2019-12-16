@@ -68,21 +68,26 @@ foreach (@$urls) {
     }
     my $page = $res->decoded_content;
 
-    my @render;
-    if ($type eq "html") {
-        my $tree = HTML::TreeBuilder::XPath->new;
-        $tree->parse($page);
-        my @xs = $tree->findnodes($xpath);
-        @render = map{ $_->as_text } @xs;
-    }
-    elsif ($type eq "xml") {
-        my $tree = XML::XPath->new($page);
-        my @xs = $tree->findnodes($xpath);
-        @render = map{ $_->string_value } @xs;
-    }
-    else {
-        warn("〉✗ Unknown type for $title\n"); next;
-    }
+    my @render = eval {
+        if ($type eq "html") {
+            my $tree = eval {
+                HTML::TreeBuilder::XPath->new;
+            };
+            $tree->parse($page);
+            my @xs = $tree->findnodes($xpath);
+            map{ $_->as_text } @xs;
+        }
+        elsif ($type eq "xml") {
+            my $tree = XML::XPath->new($page);
+            my @xs = $tree->findnodes($xpath);
+            map{ $_->string_value } @xs;
+        }
+        else {
+            warn("〉✗ Unknown type for $title\n");
+            next;
+        }
+    };
+    warn("〉✗ error while parsing $title: $@\n") and next if $@;
 
     if ($keepold) {
         foreach my $el (@old) {
