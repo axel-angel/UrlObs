@@ -113,11 +113,11 @@ foreach (@$urls) {
             my %a = map { $_ => 1 } @old;
             my %b = map { $_ => 1 } @render;
             push(@diffs, "++ New:");
-            foreach (keys %b) {
+            foreach (@render) {
                 push(@diffs, "  ". $_) unless defined $a{$_};
             }
             push(@diffs, "-- Off:");
-            foreach (keys %a) {
+            foreach (@old) {
                 push(@diffs, "  ". $_) unless defined $b{$_};
             }
         }
