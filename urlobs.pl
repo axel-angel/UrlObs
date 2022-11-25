@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use utf8;
-use constant VERBOSE => 0;
+use constant VERBOSE => 1;
 binmode STDOUT, ":encoding(UTF-8)";
 binmode STDERR, ":encoding(UTF-8)";
 
@@ -16,6 +16,7 @@ use XML::XPath;
 use XML::XPath::XMLParser;
 use Encode qw(encode decode);
 use List::Util qw{first min};
+use JSON;
 
 
 sub process_content {
@@ -32,7 +33,9 @@ my $urls = LoadFile($file);
 foreach (@$urls) {
     my $info = $_;
     my $url = $info->{url};
+    my $post = $info->{post}; # POST data, implies POST request
     my $xpath = $info->{xpath};
+    my $fn = $info->{fn};
     my $type = $info->{type} // "html";
     my $title = $info->{title} // $url;
     my $hash = $info->{hash} // "";
@@ -45,21 +48,32 @@ foreach (@$urls) {
     my $failures = $info->{failures} // 0;
     my $useragent = $info->{user_agent};
     my $cookie = $info->{cookie};
+    my $content_type = $info->{content_type};
     my $min_alert_failures = $info->{min_failure_alert} // 5;
 
     my @headers = ();
     push @headers, ("Cookie" => $cookie) if $cookie;
+    push @headers, ("Content-Type" => $content_type) if $content_type;
 
     $freq = $freq * 2 ** min($min_alert_failures, $failures);
     next if ($ldate + $freq > time()); # Skip too fresh
 
-    print "fetching $url\n" if VERBOSE;
+    printf "fetching $url, headers={%s}\n", (join "; ", @headers) if VERBOSE;
     my $ua = LWP::UserAgent->new();
     $ua->agent($useragent) if defined $useragent;
-    my $res = $ua->get($url, @headers);
+    my $res = do {
+        if ($post) {
+            printf "POST data: %s\n", $post if VERBOSE;
+            $ua->post($url, Content => $post, @headers);
+        }
+        else {
+            $ua->get($url, @headers);
+        }
+    };
     $info->{last} = time();
     unless ($res->is_success) {
-        if ($info->{failures} >= $min_alert_failures) {
+        printf "failure %s: %s\n", $res->status_line, $res->decoded_content if VERBOSE;
+        if ($failures >= $min_alert_failures) {
             warn("〉✗ Fetch failed for $title (freq: $freq):");
             warn("  HTTP: ". $res->status_line ."\n\n");
         }
@@ -81,6 +95,10 @@ foreach (@$urls) {
             my $tree = XML::XPath->new($page);
             my @xs = $tree->findnodes($xpath);
             map{ $_->string_value } @xs;
+        }
+        elsif ($type eq "json") {
+            my $j = JSON->new->utf8->decode($page);
+            my @result = eval $fn;
         }
         else {
             warn("〉✗ Unknown type for $title\n");
