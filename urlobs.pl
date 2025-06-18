@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use utf8;
-use constant VERBOSE => 1;
+use constant VERBOSE => 0;
 binmode STDOUT, ":encoding(UTF-8)";
 binmode STDERR, ":encoding(UTF-8)";
 
@@ -51,7 +51,7 @@ foreach (@$urls) {
     my $content_type = $info->{content_type};
     my $min_alert_failures = $info->{min_failure_alert} // 5;
 
-    my @headers = ();
+    my @headers = %{$info->{headers} // {}};
     push @headers, ("Cookie" => $cookie) if $cookie;
     push @headers, ("Content-Type" => $content_type) if $content_type;
 
@@ -61,6 +61,7 @@ foreach (@$urls) {
     printf "fetching $url, headers={%s}\n", (join "; ", @headers) if VERBOSE;
     my $ua = LWP::UserAgent->new();
     $ua->agent($useragent) if defined $useragent;
+    $ua->ssl_opts(verify_hostname => 0, SSL_verify_mode => 0x00);
     my $res = do {
         if ($post) {
             printf "POST data: %s\n", $post if VERBOSE;
