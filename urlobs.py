@@ -116,12 +116,12 @@ def main(config='url.yaml', verbose=False):
         except Exception as e:
             if verbose: traceback.print_exception(e)
             print(f"〉✗ Failure for {title}: {e}")
-            info['failures'] += 1
+            info['failures'] = failures = failures + 1
             if failures >= min_alert_failures:
                 print(f"〉✗ Alert: Fetch failed for {title} (freq: {freq})")
 
     with open(config, 'w', encoding='utf-8') as file:
-        yaml.safe_dump(urls, file)
+        yaml.safe_dump(urls, file, sort_keys=False)
 
 if __name__ == "__main__":
     parser = ArgumentParser()
