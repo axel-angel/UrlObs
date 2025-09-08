@@ -209,32 +209,34 @@ def main(config='url.yaml', verbose=False, format='text', dry_run=False):
     # outputs
     if format == 'text':
         for title, output in outputs.items():
-                print(f"〉 Changes for {title}:\n")
-                def print_them(xs):
-                    print('\n'.join(( f"  {x.text}" for x in xs )))
-                if (new := output.get('new')):
-                    print("++ New:")
-                    print_them(new)
-                if (old := output.get('old')):
-                    print("-- Old:")
-                    print_them(old)
-                if (all := output.get('all')):
-                    print_them(all)
+            print(f"〉 Changes for {title}:")
+            def print_them(xs):
+                print('\n'.join(( f"  {x.text}" for x in xs )))
+            if (new := output.get('new')):
+                print("++ New:")
+                print_them(new)
+            if (old := output.get('old')):
+                print("-- Old:")
+                print_them(old)
+            if (all := output.get('all')):
+                print_them(all)
+            print()
 
-    if format == 'markdown':
+    elif format == 'markdown':
         for title, output in outputs.items():
-                print(f"# {title}\n")
-                def print_them(xs):
-                    print('\n'.join(( f"- [{escape_chars(x.text, '[]')}]({escape_chars(x.url, '()')})"
-                                     for x in xs )))
-                if (new := output.get('new')):
-                    print("## New")
-                    print_them(new)
-                if (old := output.get('old')):
-                    print("## Old")
-                    print_them(old)
-                if (all := output.get('all')):
-                    print_them(all)
+            print(f"# {title}\n")
+            def print_them(xs):
+                print('\n'.join(( f"- [{escape_chars(x.text, '[]')}]({escape_chars(x.url, '()')})"
+                                 for x in xs )))
+            if (new := output.get('new')):
+                print("## New")
+                print_them(new)
+            if (old := output.get('old')):
+                print("## Old")
+                print_them(old)
+            if (all := output.get('all')):
+                print_them(all)
+            print()
 
     elif format == 'json':
         json.dump(outputs, sys.stdout, cls=JsonEncoder)
