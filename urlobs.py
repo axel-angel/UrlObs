@@ -100,7 +100,7 @@ def parse_content(page, content_type, xpath, xpath_text, xpath_url, fn):
     else:
         raise ValueError(f"Unknown content type: {content_type}")
 
-def main(config='url.yaml', verbose=False, format='text', dry_run=False):
+def main(*, config='url.yaml', verbose=False, format='text', dry_run=False, output_fd):
     with open(config, 'r', encoding='utf-8') as file:
         urls = yaml.safe_load(file)
 
@@ -130,7 +130,9 @@ def main(config='url.yaml', verbose=False, format='text', dry_run=False):
         fn = info.get('fn')
         title = info.get('title', url)
         hash_value = info.get('hash', '')
-        old_items = [ Item(**x) for x in info.get('content', []) ]
+        old_items = []
+        if (old_content := info.get('content')):
+            old_items = [ Item(**x) for x in old_content ]
         freq = info.get('interval', 0)
         last_date = info.get('last', 0)
         keep_old = info.get('keep_old', 0)
@@ -239,10 +241,10 @@ def main(config='url.yaml', verbose=False, format='text', dry_run=False):
             print()
 
     elif format == 'json':
-        json.dump(outputs, sys.stdout, cls=JsonEncoder)
+        json.dump(outputs, output_fd, cls=JsonEncoder)
 
     elif format == 'yaml':
-        yaml.safe_dump(outputs, sys.stdout)
+        yaml.safe_dump(outputs, output_fd, sort_keys=False)
 
     # write state back to file
     if not dry_run:
@@ -254,7 +256,16 @@ if __name__ == "__main__":
     parser.add_argument('config')
     parser.add_argument('--verbose', default=False, action='store_true')
     parser.add_argument('--format', default='text', choices=('text', 'markdown', 'json', 'yaml'))
+    parser.add_argument("--output", default=None)
     parser.add_argument('--dry-run', default=False, action='store_true')
     args = parser.parse_args()
     if args.verbose: print(f"args: {args}")
+
+    if args.output is None:
+        args.output_fd = sys.stdout
+    else:
+        args.output_fd = open(args.output, 'wt')
+    del args.output
+
     main(**vars(args))
+    args.output_fd.close()
