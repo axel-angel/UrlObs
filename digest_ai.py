@@ -11,10 +11,18 @@ The input contains the sources then the items: - ref: title
 Each item must be: short title then one sentence summary then the reference (ref).
 Write to be concise to-the-point, your titles should be keywords or very short.
 Ideally we should have {item_count:d} items, put the most important categories first.
-Feel free to filter out non-news items (like reporting/asking questions/bug issues, especially from reddit).
+Feel free to filter out non-news items (like reporting/asking questions/bug issues).
 Make sure there are no duplicates and each item/reference only appears once.
 The output format must be JSON."""
 
+
+def escape_chars(input: str, special: str) -> str:
+    for char in special:
+        input = input.replace(char, f'\\{char}')
+    return input
+
+def escape_md(input: str) -> str:
+    return escape_chars(x, '{}[]\n\r\t')
 
 def convert(xs):
     assert len(xs) <= 26
@@ -51,6 +59,10 @@ def main(*, input_yaml, prompt, model, temperature, item_count, output_fd):
     # prepare data and make prompt
     with open(input_yaml, 'r') as fd:
         xs = yaml.safe_load(fd)
+    if not xs:
+        print(f"Input diff file is empty. Aborting")
+        exit(1)
+
     ys = convert(xs)
 
     prompt = f"""{prompt.format(item_count=item_count)}
@@ -73,7 +85,7 @@ Articles:\n
         output_fd.write(f"## {category.name}\n")
         for item in category.items:
             refs_str = ''.join(( f"[^{ref}]" for ref in item.refs ))
-            output_fd.write(f"- {item.title}: {item.summary}{refs_str}\n")
+            output_fd.write(f"- **{item.title}**: {item.summary}{refs_str}\n")
         output_fd.write("\n")
     output_fd.write("\n")
 
@@ -81,7 +93,7 @@ Articles:\n
     output_fd.write("# Sources\n")
     for y in ys:
         for z in y['articles']:
-            output_fd.write(f"[^{z['ref']}]: {y['source']}: [{z['text']}]({z['url']})\n")
+            output_fd.write(f"[^{z['ref']}]: {y['source']}: [{escape_md(z['text'])}]({escape_md(z['url'])})\n")
 
 
 if __name__ == "__main__":

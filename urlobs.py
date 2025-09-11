@@ -22,6 +22,9 @@ def escape_chars(input: str, special: str) -> str:
         input = input.replace(char, f'\\{char}')
     return input
 
+def escape_md(input: str) -> str:
+    return escape_chars(x, '{}[]\n\r\t')
+
 def fetch_content(url, headers=None, post_data=None, verbose=False):
     # Fetch content from URL using GET or POST
     if post_data:
@@ -228,7 +231,7 @@ def main(*, config='url.yaml', verbose=False, format='text', dry_run=False, outp
         for title, output in outputs.items():
             print(f"# {title}\n")
             def print_them(xs):
-                print('\n'.join(( f"- [{escape_chars(x.text, '[]')}]({escape_chars(x.url, '()')})"
+                print('\n'.join(( f"- [{escape_md(x.text)}]({escape_md(x.url)')})"
                                  for x in xs )))
             if (new := output.get('new')):
                 print("## New")
