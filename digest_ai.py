@@ -26,24 +26,20 @@ def escape_chars(input: str, special: str) -> str:
     return input
 
 def escape_md(input: str) -> str:
-    return escape_chars(x, '{}[]\n\r\t')
+    return escape_chars(input, '{}[]<>\n\r\t*_`\\')
 
 def convert(xs):
-    assert len(xs) <= 26
-
     next_ref = itertools.count(start=1).__next__
-    def go(letter, idx, *, text, url):
+    def go(idx, *, text, url):
         return D(text=text,
                  url=url,
                  ref=next_ref(),
              )
     return [ D(source=title,
-               articles=[ go(letter, idx, **article)
+               articles=[ go(idx, **article)
                          for idx, article in enumerate(articles, 1) ])
             for feed_counter, (title, x) in enumerate(xs.items())
-            if (articles := x.get('new'))
-            # TODO: Handle >26 feeds
-            if (letter := string.ascii_uppercase[feed_counter % 26]) ]
+            if (articles := x.get('new')) ]
 
 
 class DigestItem(BaseModel):
@@ -97,7 +93,7 @@ Articles:\n
     output_fd.write("# Sources\n")
     for y in ys:
         for z in y['articles']:
-            output_fd.write(f"[^{z['ref']}]: {y['source']}: [{escape_md(z['text'])}]({escape_md(z['url'])})\n")
+            output_fd.write(f"[^{z['ref']}]: {y['source']}: [{escape_md(z['text'])}]({z['url']})\n")
 
 
 if __name__ == "__main__":
