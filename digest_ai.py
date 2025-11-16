@@ -6,12 +6,16 @@ import itertools
 D = dict
 
 client = OpenAI()  # Assumes OPENAI_API_KEY env var
-DEFAULT_PROMPT = """Take this list of news headlines and make a digest of it: find big categories to group similar items together by thematic.
-The input contains the sources then the items: - ref: title
-Each item must be: short title then one sentence summary then the reference (ref).
-Write to be concise to-the-point, your titles should be keywords or very short.
-Ideally we should have {item_count:d} items, put the most important categories first.
-Feel free to filter out non-news items (like reporting/asking questions/bug issues).
+DEFAULT_PROMPT = """Take this list of news headlines and make a digest that covers most big topics: find around 5 to 10 big categories to group similar items together by thematic.
+The digest is for nerds, tech, technical people, software engineers, data scientists, tech and VR enthusiasts; don't assume they're from the United States (USA): you should adapt for that audience.
+Try to mention new products, new platforms, new AI models, new releases, breakthroughts relevant for that audience.
+Optionally if some headlines aren't for the target audience but you deem too important relevant, you could put a few global thematics preferably at the end.
+We should have around {item_count:d} total items in the digest.
+The order should reflect the importance: put the most important categories first and inside them, put the most important items first.
+One sign of importance is having multiple input items talking about the same subject, and make sure to group them under your single output item.
+Feel free to filter out non-news items (like bug report, asking for support, forum posts).
+Each output item must have a short title, a sentence summary and the reference (ref).
+Write to be concise to-the-point: your titles should be very short and capture what it is about at a first glance: company/person/entity action/keywords/what (avoid including the category name!) whereas the summary completes the title with more information.
 Make sure there are no duplicates and each item/reference only appears once.
 The output format must be JSON."""
 
@@ -103,7 +107,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", default='gpt-4o', help="OpenAI model to use")
     parser.add_argument("--temperature", default=0.2, type=float, help="Model temperature")
     parser.add_argument("--output", default=None, help="File to write output to")
-    parser.add_argument("--item_count", default=25, type=int)
+    parser.add_argument("--item_count", default=50, type=int)
     args = parser.parse_args()
 
     if args.output is None:
